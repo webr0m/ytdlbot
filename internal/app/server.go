@@ -401,6 +401,35 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request, user telegram.Use
 			write(w, 400, map[string]string{"error": "Telegram no configurado"})
 			return
 		}
+		userRights := map[string]any{"can_manage_chat": true}
+		if p.ChatType == "channel" {
+			userRights["can_post_messages"] = true
+		}
+		botRights := map[string]any{}
+		if p.ChatType == "channel" {
+			botRights["can_post_messages"] = true
+		}
+		var prepared struct {
+			ID string `json:"id"`
+		}
+		if e = s.Bot.Call(ctx, "savePreparedKeyboardButton", map[string]any{
+			"user_id": user.ID,
+			"button": map[string]any{
+				"text": "Elegir carpeta",
+				"request_chat": map[string]any{
+					"request_id":                reqID,
+					"chat_is_channel":           p.ChatType == "channel",
+					"bot_is_member":             true,
+					"user_administrator_rights": userRights,
+					"bot_administrator_rights":  botRights,
+					"request_title":             true,
+					"request_username":          true,
+				},
+			},
+		}, &prepared); e != nil {
+			fail(w, fmt.Errorf("no se pudo preparar la selección de canal: %v", e))
+			return
+		}
 		write(w, 200, map[string]any{"requestId": reqID})
 	case "GET /api/admins":
 		a, _ := s.Store.Account(ctx, user.ID)
