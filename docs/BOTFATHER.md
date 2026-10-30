@@ -1,6 +1,6 @@
 # Presentación y ajustes de Telegram
 
-Bot: **@mutidlprobot** · Nombre: **Webrom Downloader**.
+Bot: **@mutidlprobot** · Nombre: **Multi Downloader Pro**.
 
 - Icono negro/plata generado mediante ImageGen y aplicado con `setMyProfilePhoto`.
 - Descripción larga y breve registradas para `es`, `en` y una alternativa bilingüe. Símbolos: 🇪🇸 Español y 🇬🇧 English.

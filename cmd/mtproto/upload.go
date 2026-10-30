@@ -103,7 +103,7 @@ func uploadSaved(ctx context.Context, client *telegram.Client, self *tg.User, ow
 		return e
 	}
 	randomID := int64(binary.LittleEndian.Uint64(b[:]))
-	updates, e := api.MessagesSendMedia(ctx, &tg.MessagesSendMediaRequest{Peer: &tg.InputPeerSelf{}, Media: &tg.InputMediaUploadedDocument{File: file, MimeType: "application/octet-stream", Attributes: []tg.DocumentAttributeClass{&tg.DocumentAttributeFilename{FileName: name}}}, Message: "Webrom Downloader · archivo completo", RandomID: randomID})
+	updates, e := api.MessagesSendMedia(ctx, &tg.MessagesSendMediaRequest{Peer: &tg.InputPeerSelf{}, Media: &tg.InputMediaUploadedDocument{File: file, MimeType: "application/octet-stream", Attributes: []tg.DocumentAttributeClass{&tg.DocumentAttributeFilename{FileName: name}}}, Message: "Multi Downloader Pro · archivo completo", RandomID: randomID})
 	if e != nil {
 		return e
 	}

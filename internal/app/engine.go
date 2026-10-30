@@ -235,7 +235,7 @@ func (e *Engine) direct(ctx context.Context, j Job, dir string, progress func(fl
 	if er != nil {
 		return er
 	}
-	req.Header.Set("User-Agent", "WebromDownloader/0.1")
+	req.Header.Set("User-Agent", "MultiDownloaderPro/0.1")
 	resp, er := e.HTTP.Do(req)
 	if er != nil {
 		return fmt.Errorf("no se pudo descargar el archivo público")

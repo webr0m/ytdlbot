@@ -121,7 +121,7 @@ func (s *Server) invoice(ctx context.Context, user int64) (string, error) {
 		return "", e
 	}
 	var link string
-	e = s.Bot.Call(ctx, "createInvoiceLink", map[string]any{"title": "Webrom Premium · 30 días", "description": "🇪🇸 30 días: 100 YouTube + 300 redes/archivos, 4K, recortes y partes. Renovación automática; cancela en Cuenta. 🇬🇧 30 days: 100 YouTube + 300 social/files, 4K, trimming & splitting. Auto-renews; cancel in Account.", "payload": id, "currency": "XTR", "prices": []map[string]any{{"label": "Premium 30 días", "amount": s.Config.PremiumStars}}, "subscription_period": 2592000}, &link)
+	e = s.Bot.Call(ctx, "createInvoiceLink", map[string]any{"title": "Multi Downloader Pro Premium · 30 días", "description": "🇪🇸 30 días: 100 YouTube + 300 redes/archivos, 4K, recortes y partes. Renovación automática; cancela en Cuenta. 🇬🇧 30 days: 100 YouTube + 300 social/files, 4K, trimming & splitting. Auto-renews; cancel in Account.", "payload": id, "currency": "XTR", "prices": []map[string]any{{"label": "Premium 30 días", "amount": s.Config.PremiumStars}}, "subscription_period": 2592000}, &link)
 	return link, e
 }
 func (s *Store) ValidateCheckout(ctx context.Context, p telegram.PreCheckout) error {

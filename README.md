@@ -1,15 +1,15 @@
-# Webrom Downloader
+# Multi Downloader Pro
 
 Bot + Mini App en español e inglés, backend Go y frontend TypeScript. PostgreSQL local guarda cola, preferencias, cuotas y suscripciones. Los motores son yt-dlp, gallery-dl y HTTP directo. La interfaz principal es la Mini App; el bot entrega los archivos y abre la interfaz.
 
 ## Estado de esta instalación
 
-- Mini App: https://api.webrom.cc
+- Mini App: https://example.com
 - Backend local: http://127.0.0.1:8095
 - PostgreSQL del proyecto: Docker, puerto local 55435. No utiliza bases de otros proyectos.
-- Administrador autorizado: **180791241** (configurado en `.env`, exento de cuotas).
-- Cloudflare: sustituida la ruta antigua de `api.webrom.cc` por `http://127.0.0.1:8095`; el conector del proyecto usa `secrets/cloudflare-token.txt`. El túnel conserva su UUID anterior y las rutas ajenas al proyecto.
-- Bot activo: [@mutidlprobot](https://t.me/mutidlprobot), mediante API local en loopback. Entrega real de vídeo YouTube comprobada.
+- Administrador autorizado: **123456789** (configurado en `.env`, exento de cuotas).
+- Cloudflare: sustituida la ruta antigua por `http://127.0.0.1:8095`; el conector del proyecto usa `secrets/cloudflare-token.txt`. El túnel conserva su UUID anterior y las rutas ajenas al proyecto.
+- Bot activo: [@example_bot](https://t.me/example_bot), mediante API local en loopback. Entrega real de vídeo YouTube comprobada.
 - Acceso público por cuenta Telegram habilitado. Premium: 50 Stars/30 días, contacto de soporte mediante el perfil Telegram del administrador. Tu administrador no necesita pagar.
 - Sesión MTProto del propietario iniciada localmente y verificada: autorizada, Premium y perteneciente al administrador. `MTPROTO_PATH` ya está conectado al backend y la entrega a Mensajes guardados se habilitó para el propietario. Aún no se ha validado una transferencia real desde un canal mediante esa sesión.
 - Tipografía ampliada y temas Día/Noche con identidad negra y tonos neutros; selector persistente en este dispositivo.

@@ -10,7 +10,7 @@
 - `go vet ./...`; auditoría npm sin vulnerabilidades notificadas al ejecutar.
 - API Telegram local `getMe`: identidad @mutidlprobot verificada. Bot migrado desde API cloud con logOut; menú web_app apunta a https://api.webrom.cc/.
 - HTTPS público y /healthz responden. Clave de administrador local rechazada desde internet (401). Cuenta administrativa local verificada como ID 180791241.
-- Primera entrega real: tarea `ebfd736d0e78cd87d6e66ddb6575a93d`, vídeo YouTube NTCEC Intro by Webrom ft. kukushuku, MP4 de 3.115.614 bytes, estado done/100%, file_id devuelto por Telegram.
+- Primera entrega real: tarea `ebfd736d0e78cd87d6e66ddb6575a93d`, vídeo YouTube NTCEC Intro by Multi Downloader Pro ft. kukushuku, MP4 de 3.115.614 bytes, estado done/100%, file_id devuelto por Telegram.
 - Transcodificación RAM real: tarea `f5865a12bca654389f38005383817b91`, parte MP4 de 5.519.414 bytes y manifiesto de 534 bytes confirmados por Telegram, estado done. Una prueba anterior detectó selección de intermedios; se corrigió usando las rutas after_move de yt-dlp y resolución absoluta de FFmpeg. Se añadió una prueba de regresión que excluye intermedios y conserva subtítulos.
 - Premium habilitado a 50 Stars/30 días; usuarios públicos entran mediante firma de Telegram. El administrador está excluido de la compra: el endpoint rechaza cobrarle porque ya tiene todas las funciones.
 - Sitio revisado en Chrome. Captura: `artifacts/miniapp-webrom.png`.
