@@ -1,0 +1,10 @@
+# Añade esta ruta al túnel existente o crea uno dedicado.
+# Conserva las demás rutas si el túnel tiene otros servicios.
+tunnel: REEMPLAZAR_UUID
+credentials-file: C:/ruta/privada/REEMPLAZAR_UUID.json
+ingress:
+  - hostname: api.webrom.cc
+    service: http://127.0.0.1:8095
+    originRequest:
+      connectTimeout: 10s
+  - service: http_status:404

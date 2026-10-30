@@ -1,0 +1,176 @@
+{
+  "name": "Webrom Downloader",
+  "username": "mutidlprobot",
+  "profilePhotoSet": true,
+  "menu": {
+    "type": "web_app",
+    "text": "🌐 Open / Abrir",
+    "web_app": {
+      "url": "https://api.webrom.cc/"
+    }
+  },
+  "languages": {
+    "default": {
+      "description": {
+        "description": "🇪🇸 Descarga vídeos, música, galerías y archivos desde YouTube, Instagram, TikTok, Facebook, X y más. Elige calidad y formato, sigue la cola y recibe los archivos aquí. Premium: hasta 4K, recortes y archivos grandes divididos.\n\n🇬🇧 Download videos, music, galleries and files. Choose quality and format, track your queue and receive files here. Premium adds up to 4K, trimming and split large files.\n\n🚀 Open App / Abrir app · ⭐ Telegram Stars\nAvailability depends on the source."
+      },
+      "about": {
+        "short_description": "🇪🇸 Vídeos, música y archivos. 🇬🇧 Videos, music & files. ⬇️ Mini App · ⭐ Premium · by Webrom"
+      },
+      "commands": [
+        {
+          "command": "start",
+          "description": "🚀 Abrir Mini App / 🚀 Open Mini App"
+        },
+        {
+          "command": "download",
+          "description": "⬇️ Nueva descarga / ⬇️ New download"
+        },
+        {
+          "command": "queue",
+          "description": "📚 Cola y progreso / 📚 Queue and progress"
+        },
+        {
+          "command": "history",
+          "description": "🕘 Historial y archivos / 🕘 History and files"
+        },
+        {
+          "command": "premium",
+          "description": "⭐ Planes y suscripción / ⭐ Plans and subscription"
+        },
+        {
+          "command": "account",
+          "description": "👤 Mi cuenta y límites / 👤 Account and limits"
+        },
+        {
+          "command": "settings",
+          "description": "⚙️ Ajustes de la app / ⚙️ App settings"
+        },
+        {
+          "command": "help",
+          "description": "❓ Ayuda y soporte / ❓ Help and support"
+        },
+        {
+          "command": "terms",
+          "description": "📃 Condiciones de uso / 📃 Terms of use"
+        },
+        {
+          "command": "privacy",
+          "description": "🔒 Privacidad / 🔒 Privacy policy"
+        },
+        {
+          "command": "paysupport",
+          "description": "💬 Pagos y reembolsos / 💬 Payments and refunds"
+        }
+      ]
+    },
+    "es": {
+      "description": {
+        "description": "🇪🇸 Tu centro de descargas en Telegram.\n\n⬇️ Vídeos, música, galerías y archivos de YouTube, Instagram, TikTok, Facebook, X y más.\n🎛 Elige calidad y formato; consulta cola, progreso e historial.\n⭐ Premium: hasta 4K, FLAC, listas, subtítulos, recortes y archivos grandes divididos en partes.\n🌗 Temas Día/Noche y tamaño de letra ajustable.\n\n🚀 Pulsa Abrir app para empezar.\n⭐ Suscripción con Telegram Stars.\nLa disponibilidad depende del sitio; sin descifrar DRM.\n\n🇬🇧 English supported."
+      },
+      "about": {
+        "short_description": "🇪🇸 Vídeos, música, galerías y archivos en Telegram. ⬇️ Mini App · ⭐ Premium · 🇬🇧 English"
+      },
+      "commands": [
+        {
+          "command": "start",
+          "description": "🇪🇸 🚀 Abrir Mini App"
+        },
+        {
+          "command": "download",
+          "description": "🇪🇸 ⬇️ Nueva descarga"
+        },
+        {
+          "command": "queue",
+          "description": "🇪🇸 📚 Cola y progreso"
+        },
+        {
+          "command": "history",
+          "description": "🇪🇸 🕘 Historial y archivos"
+        },
+        {
+          "command": "premium",
+          "description": "🇪🇸 ⭐ Planes y suscripción"
+        },
+        {
+          "command": "account",
+          "description": "🇪🇸 👤 Mi cuenta y límites"
+        },
+        {
+          "command": "settings",
+          "description": "🇪🇸 ⚙️ Ajustes de la app"
+        },
+        {
+          "command": "help",
+          "description": "🇪🇸 ❓ Ayuda y soporte"
+        },
+        {
+          "command": "terms",
+          "description": "🇪🇸 📃 Condiciones de uso"
+        },
+        {
+          "command": "privacy",
+          "description": "🇪🇸 🔒 Privacidad"
+        },
+        {
+          "command": "paysupport",
+          "description": "🇪🇸 💬 Pagos y reembolsos"
+        }
+      ]
+    },
+    "en": {
+      "description": {
+        "description": "🇬🇧 Your download hub inside Telegram.\n\n⬇️ Save videos, music, galleries and files from YouTube, Instagram, TikTok, Facebook, X and more.\n🎛 Choose quality and format; track your queue, progress and history.\n⭐ Premium: up to 4K, FLAC, playlists, subtitles, trimming and split large files.\n🌗 Day/Night themes and adjustable text size.\n\n🚀 Tap Open App to get started.\n⭐ Subscribe with Telegram Stars.\nAvailability depends on each source; no DRM decryption.\n\n🇪🇸 Español disponible."
+      },
+      "about": {
+        "short_description": "🇬🇧 Videos, music, galleries & files in Telegram. ⬇️ Mini App · ⭐ Premium · 🇪🇸 Español"
+      },
+      "commands": [
+        {
+          "command": "start",
+          "description": "🇬🇧 🚀 Open Mini App"
+        },
+        {
+          "command": "download",
+          "description": "🇬🇧 ⬇️ New download"
+        },
+        {
+          "command": "queue",
+          "description": "🇬🇧 📚 Queue and progress"
+        },
+        {
+          "command": "history",
+          "description": "🇬🇧 🕘 History and files"
+        },
+        {
+          "command": "premium",
+          "description": "🇬🇧 ⭐ Plans and subscription"
+        },
+        {
+          "command": "account",
+          "description": "🇬🇧 👤 Account and limits"
+        },
+        {
+          "command": "settings",
+          "description": "🇬🇧 ⚙️ App settings"
+        },
+        {
+          "command": "help",
+          "description": "🇬🇧 ❓ Help and support"
+        },
+        {
+          "command": "terms",
+          "description": "🇬🇧 📃 Terms of use"
+        },
+        {
+          "command": "privacy",
+          "description": "🇬🇧 🔒 Privacy policy"
+        },
+        {
+          "command": "paysupport",
+          "description": "🇬🇧 💬 Payments and refunds"
+        }
+      ]
+    }
+  }
+}

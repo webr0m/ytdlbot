@@ -1,0 +1,10 @@
+.git
+.env
+.tools
+data
+bin
+secrets
+artifacts
+web/node_modules
+node_modules
+*.log

@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+.tools/
+data/
+bin/
+node_modules/
+web/node_modules/
+*.log
+coverage*
+secrets/
+artifacts/
