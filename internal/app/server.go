@@ -211,6 +211,11 @@ func (s *Server) Handler() http.Handler {
 			http.Error(w, "método no permitido", 405)
 			return
 		}
+		if strings.HasSuffix(r.URL.Path, ".html") || r.URL.Path == "/" {
+			w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		} else if strings.Contains(r.URL.Path, "/assets/") {
+			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+		}
 		if _, e := fs.Stat(sub, strings.TrimPrefix(r.URL.Path, "/")); e != nil {
 			r.URL.Path = "/"
 		}
