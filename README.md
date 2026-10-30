@@ -37,7 +37,7 @@ Bot + Mini App en español e inglés, backend Go y frontend TypeScript. PostgreS
 | Calidad | Hasta 1080p | Hasta 4K disponible en origen | Todas |
 | Lotes, FLAC, subtítulos, recortes | No | Sí | Sí |
 | Archivos grandes divididos | No | Sí | Sí |
-| Transcodificación por RAM | No | Sí | Sí |
+| Conversión a MP4 compatible | No | Sí, solo si hace falta | Sí |
 | Panel de recursos, pausa, reembolsos | No | No | Sí |
 
 La suscripción del descargador es independiente de Telegram Premium. Se paga en Stars, se renueva cada 30 días y se cancela desde Cuenta. El backend valida la factura, usuario, moneda e importe y espera `successful_payment`; el callback visual de pago no concede permisos. Los identificadores únicos de cobro evitan activar dos veces el mismo pago. Los reembolsos revocan el período correspondiente.
@@ -50,7 +50,7 @@ La entrega ahora es un **único archivo completo**. Las partes binarias son inte
 - Propietario de la sesión Telegram Premium: archivos mayores se envían mediante MTProto a **sus propios Mensajes guardados**, hasta 4 GiB. Se comprueba que la sesión pertenece al ID destinatario y que sigue siendo Premium. No se usa la cuenta personal para entregar a otros usuarios.
 - Una unión virtual conserva el tamaño original y no evita estos límites. Los archivos que exceden el transporte se rechazan con un error para reducir calidad o recortar; no se entregan partes automáticamente.
 
-En modo RAM, FFmpeg produce un MP4 H.264/AAC fragmentado por una tubería. Se usan búferes de 1 MiB y bloques temporales en disco de hasta `RAM_PART_MB` MB para conocer el tamaño final y comprobar que FFmpeg terminó correctamente **antes de enviar**. Los bloques se leen como un único vídeo y se eliminan tras la entrega o el error. Se necesita espacio para la descarga original y los bloques convertidos; no hay una tercera copia unida. La codificación tiene pérdida.
+En modo de conversión, primero se comprueba el archivo descargado: si ya es un **MP4 con vídeo H.264 y audio AAC** (por ejemplo, YouTube a 1080p o menos), se envía **tal cual**, sin recodificar. Solo cuando el origen usa otro contenedor o códec (VP9, AV1, HEVC, Opus, etc.) FFmpeg produce un MP4 H.264/AAC fragmentado por una tubería. Se usan búferes de 1 MiB y bloques temporales en disco de hasta `RAM_PART_MB` MB para conocer el tamaño final y comprobar que FFmpeg terminó correctamente **antes de enviar**. Los bloques se leen como un único vídeo y se eliminan tras la entrega o el error. Se necesita espacio para la descarga original y los bloques convertidos; no hay una tercera copia unida. La codificación tiene pérdida.
 
 `FFMPEG_ENCODER=auto` detecta AMD AMF, NVIDIA NVENC o Intel QSV y comprueba el archivo real antes de usar hardware. En este equipo se verificó AMD AMF y D3D11VA con Radeon RX 6600M. La alternativa es libx264. El historial distingue conversión, unión virtual y subida y conserva la confirmación de Telegram.
 

@@ -142,10 +142,11 @@ func (e *Engine) Download(ctx context.Context, j Job, dir string, progress func(
 		if j.Options.Mode == "audio" {
 			a = append(a, "-f", "bestaudio/best", "--extract-audio", "--audio-format", j.Options.AudioFormat, "--audio-quality", "0")
 		} else {
-			format := fmt.Sprintf("bv*[height<=%d]+ba/b[height<=%d]/b", j.Options.Quality, j.Options.Quality)
-			if !j.Options.TranscodeRAM {
-				format = fmt.Sprintf("bv*[height<=%d][vcodec^=avc]+ba[acodec^=mp4a]/b[height<=%d]/bv*[height<=%d]+ba/b", j.Options.Quality, j.Options.Quality, j.Options.Quality)
-			}
+			// Prefer a stream pair Telegram can use directly. This avoids a
+			// needless re-encode of 1080p and lower YouTube downloads; if no
+			// H.264/AAC pair exists (for example 4K), yt-dlp falls back to the
+			// best available streams and the worker decides whether to convert.
+			format := videoFormat(j.Options.Quality)
 			a = append(a, "-f", format, "--merge-output-format", "mp4")
 		}
 		if j.Options.Subtitles {
@@ -208,6 +209,9 @@ func (e *Engine) Download(ctx context.Context, j Job, dir string, progress func(
 		return os.WriteFile(filepath.Join(dir, ".finalfiles.json"), b, 0600)
 	}
 	return nil
+}
+func videoFormat(quality int) string {
+	return fmt.Sprintf("bv*[height<=%d][vcodec^=avc]+ba[acodec^=mp4a]/b[height<=%d]/bv*[height<=%d]+ba/b", quality, quality, quality)
 }
 func friendlyError(detail string) error {
 	d := strings.ToLower(detail)

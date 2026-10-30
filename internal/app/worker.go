@@ -193,7 +193,7 @@ func (s *Server) runJob(parent context.Context, j Job) {
 					er = ie
 					break
 				}
-				if j.Options.TranscodeRAM && isVideo(path) {
+				if shouldTranscodeVideo(ctx, s.Config.FFmpeg, path, j.Options) {
 					s.Store.Stage(ctx, j, "waiting", "Esperando turno de GPU/RAM", 0)
 					select {
 					case s.ramGate <- struct{}{}:

@@ -70,3 +70,12 @@ Se añadió el control **Aa**, escala 90–130 %, memoria por dispositivo y rest
 - `go build ./...`, `go vet ./...` y `go test ./... -count=1` aprobados tras los cambios.
 - Límite de la evidencia: no se ejecutó una prueba de carga con varios usuarios reales simultáneos; la corrección del cupo y del reparto se comprobó con workers concurrentes contra PostgreSQL y con el transporte Telegram simulado.
 - Despliegue del 30-10-2026: binario y recursos web reconstruidos y servicio reiniciado. `GET /api/system` confirma `workers=2`, `activePerUser=2` y `uploads=2`; `@mutidlprobot` responde `getMe` y `getWebhookInfo` no muestra webhook ni errores de polling.
+
+## Conversión de vídeo solo cuando hace falta — 2026-10-30
+
+- `internal/app/compatibility.go`: `telegramVideoCompatible` lee solo las cabeceras con FFmpeg y acepta la entrega directa cuando el archivo es MP4 con vídeo H.264, píxel `yuv420p` y audio AAC (o sin audio). Cualquier otro contenedor, códec o formato de píxel requiere conversión.
+- `shouldTranscodeVideo` concentra la decisión: la opción de conversión activa ya no implica recodificar siempre; solo se convierte si el archivo descargado no es compatible.
+- `videoFormat` prefiere siempre `avc` + `mp4a` en yt-dlp, de modo que YouTube a 1080p o menos se entrega sin recodificar. Si no existe ese par (por ejemplo 4K), se usa la mejor fuente disponible y la comprobación decide.
+- Pruebas aprobadas: `TestTelegramVideoCompatible` (H.264/AAC, sin audio, códec distinto, audio distinto y H.264 de 10 bits), `TestShouldTranscodeOnlyWhenNeeded` (compatible, incompatible y opción desactivada) y `TestVideoFormatPrefersH264AAC`.
+- `npm run build --prefix web`, `go build ./...`, `go vet ./...` y `go test ./... -count=1` aprobados con el código nuevo.
+- Límite de la evidencia: la comprobación usa la cabecera que escribe FFmpeg, no un análisis frame a frame; un archivo con metadatos engañosos podría requerir conversión tras el rechazo de Telegram.
