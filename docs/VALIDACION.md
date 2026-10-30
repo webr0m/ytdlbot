@@ -69,3 +69,4 @@ Se añadió el control **Aa**, escala 90–130 %, memoria por dispositivo y rest
 - El polling del bot registra y descarta una actualización fallida, avanza el offset y reintenta errores 429/5xx de Telegram con espera. Un chat bloqueado o una carga inválida ya no congela los mensajes siguientes.
 - `go build ./...`, `go vet ./...` y `go test ./... -count=1` aprobados tras los cambios.
 - Límite de la evidencia: no se ejecutó una prueba de carga con varios usuarios reales simultáneos; la corrección del cupo y del reparto se comprobó con workers concurrentes contra PostgreSQL y con el transporte Telegram simulado.
+- Despliegue del 30-10-2026: binario y recursos web reconstruidos y servicio reiniciado. `GET /api/system` confirma `workers=2`, `activePerUser=2` y `uploads=2`; `@mutidlprobot` responde `getMe` y `getWebhookInfo` no muestra webhook ni errores de polling.
