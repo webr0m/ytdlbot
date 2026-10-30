@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -233,6 +234,29 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request, user telegram.Use
 		write(w, 200, map[string]bool{"ok": true})
 		return
 	}
+	if r.Method == http.MethodDelete && strings.HasPrefix(r.URL.Path, "/api/admins/") {
+		idStr := strings.TrimPrefix(r.URL.Path, "/api/admins/")
+		id, e := strconv.Atoi(idStr)
+		if e != nil {
+			http.NotFound(w, r)
+			return
+		}
+		a, _ := s.Store.Account(ctx, user.ID)
+		if !a.Admin {
+			write(w, 403, map[string]string{"error": "solo administradores"})
+			return
+		}
+		if s.Config.Admins[int64(id)] {
+			write(w, 400, map[string]string{"error": "no se puede eliminar un administrador base"})
+			return
+		}
+		if e := s.Store.RemoveAdmin(ctx, int64(id)); e != nil {
+			fail(w, e)
+			return
+		}
+		write(w, 200, map[string]bool{"ok": true})
+		return
+	}
 	switch r.Method + " " + r.URL.Path {
 	case "GET /api/me":
 		a, e := s.Store.Account(ctx, user.ID)
@@ -407,6 +431,49 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request, user telegram.Use
 			return
 		}
 		write(w, 200, map[string]any{"preparedId": prepared.ID, "requestId": reqID})
+	case "GET /api/admins":
+		a, _ := s.Store.Account(ctx, user.ID)
+		if !a.Admin {
+			write(w, 403, map[string]string{"error": "solo administradores"})
+			return
+		}
+		cfg := []int64{}
+		for id := range s.Config.Admins {
+			cfg = append(cfg, id)
+		}
+		db, _ := s.Store.ListAdmins(ctx)
+		seen := map[int64]bool{}
+		all := []int64{}
+		for _, id := range append(cfg, db...) {
+			if seen[id] {
+				continue
+			}
+			seen[id] = true
+			all = append(all, id)
+		}
+		write(w, 200, map[string]any{"admins": all, "base": cfg})
+	case "POST /api/admins":
+		a, _ := s.Store.Account(ctx, user.ID)
+		if !a.Admin {
+			write(w, 403, map[string]string{"error": "solo administradores"})
+			return
+		}
+		var p struct {
+			UserID int64 `json:"userId"`
+		}
+		if e := read(w, r, &p); e != nil {
+			fail(w, e)
+			return
+		}
+		if p.UserID == 0 {
+			write(w, 400, map[string]string{"error": "indica un ID de usuario"})
+			return
+		}
+		if e := s.Store.AddAdmin(ctx, p.UserID); e != nil {
+			fail(w, e)
+			return
+		}
+		write(w, 201, map[string]bool{"ok": true})
 	case "PUT /api/settings":
 		var o Options
 		if e := read(w, r, &o); e != nil {

@@ -41,6 +41,12 @@ type queryer interface {
 
 func (s *Store) account(ctx context.Context, q queryer, user int64) (Account, error) {
 	a := Account{Admin: s.Config.Admins[user], YouTubeLimit: 5, SocialLimit: s.Config.DailyLimit, Period: "hoy"}
+	if !a.Admin && q != nil {
+		var dbAdmin bool
+		if e := q.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM admins WHERE user_id=$1)", user).Scan(&dbAdmin); e == nil && dbAdmin {
+			a.Admin = true
+		}
+	}
 	now := time.Now().UTC()
 	since := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 	a.Reset = since.Add(24 * time.Hour)

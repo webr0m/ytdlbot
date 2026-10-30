@@ -339,6 +339,41 @@ func (s *Store) DeleteFolder(ctx context.Context, user int64, id string) error {
 	return e
 }
 
+func (s *Store) ListAdmins(ctx context.Context) ([]int64, error) {
+	rows, e := s.Pool.Query(ctx, "SELECT user_id FROM admins ORDER BY created_at ASC")
+	if e != nil {
+		return nil, e
+	}
+	defer rows.Close()
+	ids := []int64{}
+	for rows.Next() {
+		var id int64
+		if e = rows.Scan(&id); e != nil {
+			return nil, e
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+func (s *Store) AddAdmin(ctx context.Context, user int64) error {
+	tx, e := s.Pool.Begin(ctx)
+	if e != nil {
+		return e
+	}
+	defer tx.Rollback(ctx)
+	if _, e = tx.Exec(ctx, "INSERT INTO users(id) VALUES($1) ON CONFLICT DO NOTHING", user); e != nil {
+		return e
+	}
+	if _, e = tx.Exec(ctx, "INSERT INTO admins(user_id) VALUES($1) ON CONFLICT DO NOTHING", user); e != nil {
+		return e
+	}
+	return tx.Commit(ctx)
+}
+func (s *Store) RemoveAdmin(ctx context.Context, user int64) error {
+	_, e := s.Pool.Exec(ctx, "DELETE FROM admins WHERE user_id=$1", user)
+	return e
+}
+
 func (s *Store) CreateFolderRequest(ctx context.Context, user int64, requestID int64) error {
 	_, e := s.Pool.Exec(ctx, "INSERT INTO folder_requests(request_id,user_id) VALUES($1,$2)", requestID, user)
 	return e

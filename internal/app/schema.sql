@@ -45,3 +45,7 @@ CREATE TABLE IF NOT EXISTS folder_requests (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS folder_requests_user ON folder_requests(user_id, created_at);
+CREATE TABLE IF NOT EXISTS admins (
+  user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
