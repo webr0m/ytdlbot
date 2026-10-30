@@ -29,10 +29,13 @@ import (
 var assets embed.FS
 
 type Server struct {
-	Config      Config
-	Store       *Store
-	Engine      *Engine
-	Bot         *telegram.Client
+	Config Config
+	Store  *Store
+	Engine *Engine
+	Bot    *telegram.Client
+	// botIDF caches the numeric bot ID from getMe so folder chat validation
+	// can check bot permissions without extra round trips.
+	botIDF      atomic.Int64
 	ramGate     chan struct{}
 	inspectGate chan struct{}
 	uploadGate  chan struct{}
@@ -221,6 +224,15 @@ func (s *Server) Handler() http.Handler {
 }
 func (s *Server) route(w http.ResponseWriter, r *http.Request, user telegram.User) {
 	ctx := r.Context()
+	if r.Method == http.MethodDelete && strings.HasPrefix(r.URL.Path, "/api/folders/") {
+		id := strings.TrimPrefix(r.URL.Path, "/api/folders/")
+		if e := s.Store.DeleteFolder(ctx, user.ID, id); e != nil {
+			fail(w, e)
+			return
+		}
+		write(w, 200, map[string]bool{"ok": true})
+		return
+	}
 	switch r.Method + " " + r.URL.Path {
 	case "GET /api/me":
 		a, e := s.Store.Account(ctx, user.ID)
@@ -286,6 +298,115 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request, user telegram.Use
 			return
 		}
 		write(w, 200, info)
+	case "GET /api/folders":
+		folders, e := s.Store.ListFolders(ctx, user.ID)
+		if e != nil {
+			fail(w, fmt.Errorf("no se pudieron consultar las carpetas"))
+			return
+		}
+		premium, e := s.premiumAccess(ctx, user.ID)
+		if e != nil {
+			fail(w, e)
+			return
+		}
+		write(w, 200, map[string]any{"folders": folders, "limit": MaxFolders, "premium": premium})
+	case "POST /api/folders":
+		var p struct {
+			Name string `json:"name"`
+			Chat string `json:"chat"`
+		}
+		if e := read(w, r, &p); e != nil {
+			fail(w, e)
+			return
+		}
+		if e := s.cleanupFolderRequests(ctx); e != nil {
+			fail(w, e)
+			return
+		}
+		premium, e := s.premiumAccess(ctx, user.ID)
+		if e != nil {
+			fail(w, e)
+			return
+		}
+		if !premium && !s.Config.Admins[user.ID] {
+			write(w, 403, map[string]string{"error": "las carpetas son una función Premium"})
+			return
+		}
+		f, e := s.CreateFolderManual(ctx, user.ID, p.Name, p.Chat)
+		if e != nil {
+			fail(w, e)
+			return
+		}
+		write(w, 201, f)
+	case "POST /api/folders/pick":
+		if e := s.cleanupFolderRequests(ctx); e != nil {
+			fail(w, e)
+			return
+		}
+		premium, e := s.premiumAccess(ctx, user.ID)
+		if e != nil {
+			fail(w, e)
+			return
+		}
+		if !premium && !s.Config.Admins[user.ID] {
+			write(w, 403, map[string]string{"error": "las carpetas son una función Premium"})
+			return
+		}
+		var p struct {
+			ChatType string `json:"chatType"`
+		}
+		if e = read(w, r, &p); e != nil {
+			fail(w, e)
+			return
+		}
+		if p.ChatType != "channel" && p.ChatType != "group" {
+			write(w, 400, map[string]string{"error": "tipo de destino no válido"})
+			return
+		}
+		var existing int64
+		if e = s.Store.Pool.QueryRow(ctx, "SELECT COALESCE(MAX(request_id),0)+1 FROM folder_requests").Scan(&existing); e != nil {
+			fail(w, fmt.Errorf("no se pudo preparar la selección de carpeta"))
+			return
+		}
+		reqID := existing + 1
+		if e = s.Store.CreateFolderRequest(ctx, user.ID, reqID); e != nil {
+			fail(w, e)
+			return
+		}
+		if s.Bot == nil {
+			write(w, 400, map[string]string{"error": "Telegram no configurado"})
+			return
+		}
+		userRights := map[string]any{"can_manage_chat": true}
+		if p.ChatType == "channel" {
+			userRights["can_post_messages"] = true
+		}
+		botRights := map[string]any{}
+		if p.ChatType == "channel" {
+			botRights["can_post_messages"] = true
+		}
+		var prepared struct {
+			ID string `json:"id"`
+		}
+		if e = s.Bot.Call(ctx, "savePreparedKeyboardButton", map[string]any{
+			"user_id": user.ID,
+			"button": map[string]any{
+				"text": "Elegir carpeta",
+				"request_chat": map[string]any{
+					"request_id":                reqID,
+					"chat_is_channel":           p.ChatType == "channel",
+					"bot_is_member":             true,
+					"user_administrator_rights": userRights,
+					"bot_administrator_rights":  botRights,
+					"request_title":             true,
+					"request_username":          true,
+				},
+			},
+		}, &prepared); e != nil {
+			fail(w, fmt.Errorf("no se pudo preparar la selección de canal"))
+			return
+		}
+		write(w, 200, map[string]any{"preparedId": prepared.ID, "requestId": reqID})
 	case "PUT /api/settings":
 		var o Options
 		if e := read(w, r, &o); e != nil {
@@ -494,6 +615,40 @@ func (s *Server) jobAction(w http.ResponseWriter, r *http.Request, user telegram
 		write(w, 200, map[string]bool{"ok": true})
 		return
 	}
+	if action == "folder" {
+		var p struct {
+			Index    int    `json:"index"`
+			FolderID string `json:"folderId"`
+		}
+		if e := read(w, r, &p); e != nil {
+			fail(w, e)
+			return
+		}
+		if p.FolderID == "" || p.Index < 0 || p.Index >= len(j.Files) {
+			fail(w, fmt.Errorf("carpeta o archivo no válido"))
+			return
+		}
+		premium, e := s.premiumAccess(ctx, user.ID)
+		if e != nil {
+			fail(w, e)
+			return
+		}
+		if !premium && !s.Config.Admins[user.ID] {
+			write(w, 403, map[string]string{"error": "las carpetas son una función Premium"})
+			return
+		}
+		folder, e := s.Store.Folder(ctx, user.ID, p.FolderID)
+		if e != nil {
+			fail(w, fmt.Errorf("carpeta no encontrada"))
+			return
+		}
+		if err := s.DeliverJobToFolder(ctx, user, j, folder, j.Files[p.Index]); err != nil {
+			fail(w, err)
+			return
+		}
+		write(w, 200, map[string]bool{"ok": true})
+		return
+	}
 	http.NotFound(w, r)
 }
 func (s *Server) menu() any {
@@ -607,6 +762,19 @@ func (s *Server) handleUpdate(parent context.Context, u telegram.Update) error {
 		_, e := s.Store.Pool.Exec(ctx, "UPDATE subscriptions SET refunded=true WHERE charge_id=$1 AND user_id=$2", m.Refund.ChargeID, m.From.ID)
 		return e
 	}
+	if m.ChatShared != nil && m.ChatShared.RequestID > 0 {
+		folder, e := s.CompleteFolderFromChatShared(ctx, m.From.ID, m.ChatShared.RequestID, m.ChatShared.ChatID)
+		if e != nil {
+			s.Bot.Message(ctx, m.Chat.ID, "No se pudo guardar la carpeta: "+e.Error(), s.menuFor(m.From, "folders"))
+			return nil
+		}
+		text := "Carpeta creada: " + folder.Name
+		if folder.ChatUsername != "" {
+			text += " (@" + folder.ChatUsername + ")"
+		}
+		s.Bot.Message(ctx, m.Chat.ID, text+" · Usa el botón de carpetas para enviar tus archivos.", s.menuFor(m.From, "folders"))
+		return nil
+	}
 	if m.Chat.Type != "private" {
 		return nil
 	}
@@ -617,7 +785,7 @@ func (s *Server) handleUpdate(parent context.Context, u telegram.Update) error {
 	view := "download"
 	command := strings.TrimPrefix(strings.Split(strings.TrimSpace(m.Text), " ")[0], "/")
 	switch command {
-	case "queue", "history", "premium", "account":
+	case "queue", "history", "premium", "account", "folders":
 		view = command
 	case "settings":
 		view = "account"

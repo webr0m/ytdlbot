@@ -162,3 +162,92 @@ func sentMessageID(updates []tg.UpdateClass, randomID int64) int {
 	}
 	return 0
 }
+
+// forwardSaved moves a document delivered to the owner's Saved Messages into a
+// destination channel or group using Telegram's file references, without another
+// download or upload.
+func forwardSaved(ctx context.Context, client *telegram.Client, self *tg.User, owner int64, savedMessageID int64, chatID int64, username string) error {
+	if owner != self.ID {
+		return fmt.Errorf("Mensajes guardados solo está disponible para el propietario de la sesión")
+	}
+	api := client.API()
+	peer, err := resolveForwardPeer(ctx, api, chatID, username)
+	if err != nil {
+		return err
+	}
+	var b [8]byte
+	if _, e := rand.Read(b[:]); e != nil {
+		return e
+	}
+	randomID := int64(binary.LittleEndian.Uint64(b[:]))
+	updates, e := api.MessagesForwardMessages(ctx, &tg.MessagesForwardMessagesRequest{
+		FromPeer: &tg.InputPeerSelf{},
+		ID:       []int{int(savedMessageID)},
+		RandomID: []int64{randomID},
+		ToPeer:   peer,
+	})
+	if e != nil {
+		return e
+	}
+	mid := 0
+	switch u := updates.(type) {
+	case *tg.Updates:
+		mid = sentMessageID(u.Updates, randomID)
+	case *tg.UpdatesCombined:
+		mid = sentMessageID(u.Updates, randomID)
+	}
+	if mid == 0 {
+		return fmt.Errorf("Telegram no confirmó el reenvío al canal")
+	}
+	return json.NewEncoder(os.Stdout).Encode(map[string]any{"forwarded": true, "messageId": mid, "chatId": chatID})
+}
+
+func resolveForwardPeer(ctx context.Context, api *tg.Client, chatID int64, username string) (tg.InputPeerClass, error) {
+	if username != "" {
+		resolved, e := api.ContactsResolveUsername(ctx, &tg.ContactsResolveUsernameRequest{Username: username})
+		if e != nil {
+			return nil, e
+		}
+		var channel *tg.Channel
+		for _, c := range resolved.Chats {
+			if ch, ok := c.(*tg.Channel); ok {
+				channel = ch
+				break
+			}
+		}
+		if channel != nil && !channel.Left {
+			return &tg.InputPeerChannel{ChannelID: channel.ID, AccessHash: channel.AccessHash}, nil
+		}
+	}
+	res, e := api.MessagesGetDialogs(ctx, &tg.MessagesGetDialogsRequest{OffsetPeer: &tg.InputPeerEmpty{}, Limit: 100, OffsetDate: 0, OffsetID: 0})
+	if e != nil {
+		return nil, e
+	}
+	var chats []tg.ChatClass
+	switch d := res.(type) {
+	case *tg.MessagesDialogs:
+		chats = d.GetChats()
+	case *tg.MessagesDialogsSlice:
+		chats = d.GetChats()
+	default:
+		return nil, fmt.Errorf("la sesión Premium no devolvió la lista de chats")
+	}
+	for _, c := range chats {
+		switch cc := c.(type) {
+		case *tg.Channel:
+			if cc.Left {
+				continue
+			}
+			if cc.Broadcast {
+				return &tg.InputPeerChannel{ChannelID: cc.ID, AccessHash: cc.AccessHash}, nil
+			}
+			return &tg.InputPeerChat{ChatID: cc.ID}, nil
+		case *tg.Chat:
+			if chatID < 0 {
+				continue
+			}
+			return &tg.InputPeerChat{ChatID: cc.ID}, nil
+		}
+	}
+	return nil, fmt.Errorf("no se encontró el canal o grupo destino en la sesión Premium")
+}

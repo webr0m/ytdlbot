@@ -8,7 +8,7 @@ import (
 )
 
 var botCommands = [][3]string{
-	{"start", "🚀 Abrir Mini App", "🚀 Open Mini App"}, {"download", "⬇️ Nueva descarga", "⬇️ New download"}, {"queue", "📚 Cola y progreso", "📚 Queue and progress"}, {"history", "🕘 Historial y archivos", "🕘 History and files"}, {"premium", "⭐ Planes y suscripción", "⭐ Plans and subscription"}, {"account", "👤 Mi cuenta y límites", "👤 Account and limits"}, {"settings", "⚙️ Ajustes de la app", "⚙️ App settings"}, {"help", "❓ Ayuda y soporte", "❓ Help and support"}, {"terms", "📃 Condiciones de uso", "📃 Terms of use"}, {"privacy", "🔒 Privacidad", "🔒 Privacy policy"}, {"paysupport", "💬 Pagos y reembolsos", "💬 Payments and refunds"},
+	{"start", "🚀 Abrir Mini App", "🚀 Open Mini App"}, {"download", "⬇️ Nueva descarga", "⬇️ New download"}, {"queue", "📚 Cola y progreso", "📚 Queue and progress"}, {"history", "🕘 Historial y archivos", "🕘 History and files"}, {"premium", "⭐ Planes y suscripción", "⭐ Plans and subscription"}, {"account", "👤 Mi cuenta y límites", "👤 Account and limits"}, {"settings", "⚙️ Ajustes de la app", "⚙️ App settings"}, {"folders", "📁 Mis carpetas", "📁 My folders"}, {"help", "❓ Ayuda y soporte", "❓ Help and support"}, {"terms", "📃 Condiciones de uso", "📃 Terms of use"}, {"privacy", "🔒 Privacidad", "🔒 Privacy policy"}, {"paysupport", "💬 Pagos y reembolsos", "💬 Payments and refunds"},
 }
 
 func (s *Server) configureCommands(ctx context.Context) {

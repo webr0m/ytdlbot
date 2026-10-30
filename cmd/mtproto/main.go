@@ -58,6 +58,10 @@ func run() error {
 	out := flag.String("out", "", "Directorio de salida")
 	upload := flag.String("upload", "", "Archivo para enviar a Mensajes guardados")
 	manifest := flag.String("upload-manifest", "", "Manifiesto de partes para unir virtualmente y enviar")
+	forward := flag.Bool("forward", false, "Enviar el último archivo del propietario a un canal o grupo")
+	savedMessage := flag.Int64("saved-message", 0, "ID del mensaje guardado de Telegram a reenviar")
+	forwardChat := flag.Int64("chat", 0, "ID del canal o grupo destino")
+	forwardUsername := flag.String("chat-username", "", "Username del canal o grupo destino")
 	owner := flag.Int64("owner", 0, "ID del propietario destinatario; debe coincidir con la sesión")
 	flag.Parse()
 	app.LoadEnv(".env")
@@ -118,6 +122,12 @@ func run() error {
 		}
 		if *out == "" {
 			return fmt.Errorf("falta -out")
+		}
+		if *forward {
+			if *savedMessage <= 0 || *forwardChat == 0 {
+				return fmt.Errorf("usa -saved-message e -chat para reenviar el archivo")
+			}
+			return forwardSaved(ctx, client, self, *owner, *savedMessage, *forwardChat, *forwardUsername)
 		}
 		u, e := url.Parse(*raw)
 		if e != nil || u.Scheme != "https" || u.Host != "t.me" {

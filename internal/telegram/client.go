@@ -212,10 +212,17 @@ type Message struct {
 		ID   int64  `json:"id"`
 		Type string `json:"type"`
 	} `json:"chat"`
-	From    User     `json:"from"`
-	Text    string   `json:"text"`
-	Payment *Payment `json:"successful_payment"`
-	Refund  *Payment `json:"refunded_payment"`
+	From       User        `json:"from"`
+	Text       string      `json:"text"`
+	Payment    *Payment    `json:"successful_payment"`
+	Refund     *Payment    `json:"refunded_payment"`
+	ChatShared *ChatShared `json:"chat_shared"`
+}
+type ChatShared struct {
+	RequestID int64  `json:"request_id"`
+	ChatID    int64  `json:"chat_id"`
+	Title     string `json:"title"`
+	Username  string `json:"username"`
 }
 type PreCheckout struct {
 	ID       string `json:"id"`

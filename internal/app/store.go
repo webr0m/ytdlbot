@@ -234,3 +234,126 @@ func (s *Store) SetOffset(ctx context.Context, n int64) error {
 	_, e := s.Pool.Exec(ctx, "INSERT INTO bot_state(key,value) VALUES('offset',$1) ON CONFLICT(key) DO UPDATE SET value=excluded.value", n)
 	return e
 }
+
+type Folder struct {
+	ID           string    `json:"id"`
+	UserID       int64     `json:"userId"`
+	Name         string    `json:"name"`
+	ChatID       int64     `json:"chatId"`
+	ChatTitle    string    `json:"chatTitle"`
+	ChatUsername string    `json:"chatUsername"`
+	ChatType     string    `json:"chatType"`
+	CreatedAt    time.Time `json:"createdAt"`
+}
+type FolderRequest struct {
+	RequestID int64     `json:"requestId"`
+	UserID    int64     `json:"userId"`
+	CreatedAt time.Time `json:"createdAt"`
+}
+
+const folderColumns = "id,user_id,name,chat_id,chat_title,chat_username,chat_type,created_at"
+
+func (s *Store) ListFolders(ctx context.Context, user int64) ([]Folder, error) {
+	rows, e := s.Pool.Query(ctx, "SELECT "+folderColumns+" FROM folders WHERE user_id=$1 ORDER BY created_at ASC", user)
+	if e != nil {
+		return nil, e
+	}
+	defer rows.Close()
+	folders := []Folder{}
+	for rows.Next() {
+		var f Folder
+		var created time.Time
+		if e = rows.Scan(&f.ID, &f.UserID, &f.Name, &f.ChatID, &f.ChatTitle, &f.ChatUsername, &f.ChatType, &created); e != nil {
+			return nil, e
+		}
+		f.CreatedAt = created
+		folders = append(folders, f)
+	}
+	return folders, rows.Err()
+}
+
+func (s *Store) Folder(ctx context.Context, user int64, id string) (*Folder, error) {
+	var f Folder
+	var created time.Time
+	e := s.Pool.QueryRow(ctx, "SELECT "+folderColumns+" FROM folders WHERE id=$1 AND user_id=$2", id, user).Scan(&f.ID, &f.UserID, &f.Name, &f.ChatID, &f.ChatTitle, &f.ChatUsername, &f.ChatType, &created)
+	if e != nil {
+		return nil, e
+	}
+	f.CreatedAt = created
+	return &f, nil
+}
+
+// CreateFolder enforces the Premium limit of five folders per user with a
+// transaction-scoped advisory lock and rejects reusing a chat already stored.
+func (s *Store) CreateFolder(ctx context.Context, user int64, name, chatType string, chatID int64, chatTitle, chatUsername string) (*Folder, error) {
+	tx, e := s.Pool.Begin(ctx)
+	if e != nil {
+		return nil, e
+	}
+	defer tx.Rollback(ctx)
+	if _, e = tx.Exec(ctx, "SELECT pg_advisory_xact_lock($1)", user); e != nil {
+		return nil, e
+	}
+	if _, e = tx.Exec(ctx, "INSERT INTO users(id) VALUES($1) ON CONFLICT DO NOTHING", user); e != nil {
+		return nil, e
+	}
+	var count int
+	if e = tx.QueryRow(ctx, "SELECT count(*) FROM folders WHERE user_id=$1", user).Scan(&count); e != nil {
+		return nil, e
+	}
+	if !s.Config.Admins[user] && count >= 5 {
+		return nil, fmt.Errorf("ya tienes el máximo de 5 carpetas; elimina una antes de añadir otra")
+	}
+	if e = tx.QueryRow(ctx, "SELECT 1 FROM folders WHERE user_id=$1 AND chat_id=$2 LIMIT 1", user, chatID).Scan(&count); e != nil {
+		return nil, e
+	}
+	if count > 0 {
+		return nil, fmt.Errorf("esa carpeta ya está registrada")
+	}
+	f, e := scanFolderTx(tx.QueryRow(ctx, "INSERT INTO folders(user_id,name,chat_id,chat_title,chat_username,chat_type) VALUES($1,$2,$3,$4,$5,$6) RETURNING "+folderColumns, user, name, chatID, chatTitle, chatUsername, chatType))
+	if e != nil {
+		return nil, e
+	}
+	if e = tx.Commit(ctx); e != nil {
+		return nil, e
+	}
+	return f, nil
+}
+func scanFolderTx(row pgx.Row) (*Folder, error) {
+	var f Folder
+	var created time.Time
+	if e := row.Scan(&f.ID, &f.UserID, &f.Name, &f.ChatID, &f.ChatTitle, &f.ChatUsername, &f.ChatType, &created); e != nil {
+		return nil, e
+	}
+	f.CreatedAt = created
+	return &f, nil
+}
+func (s *Store) RenameFolder(ctx context.Context, user int64, id, name string) (*Folder, error) {
+	if _, e := s.Pool.Exec(ctx, "UPDATE folders SET name=$3 WHERE id=$1 AND user_id=$2", id, name, user); e != nil {
+		return nil, e
+	}
+	return s.Folder(ctx, user, id)
+}
+func (s *Store) DeleteFolder(ctx context.Context, user int64, id string) error {
+	_, e := s.Pool.Exec(ctx, "DELETE FROM folders WHERE id=$1 AND user_id=$2", id, user)
+	return e
+}
+
+func (s *Store) CreateFolderRequest(ctx context.Context, user int64, requestID int64) error {
+	_, e := s.Pool.Exec(ctx, "INSERT INTO folder_requests(request_id,user_id) VALUES($1,$2)", requestID, user)
+	return e
+}
+func (s *Store) ConsumeFolderRequest(ctx context.Context, requestID, user int64) error {
+	_, e := s.Pool.Exec(ctx, "DELETE FROM folder_requests WHERE request_id=$1 AND user_id=$2", requestID, user)
+	return e
+}
+func (s *Store) FolderRequest(ctx context.Context, requestID, user int64) (*FolderRequest, error) {
+	var r FolderRequest
+	var created time.Time
+	e := s.Pool.QueryRow(ctx, "SELECT request_id,user_id,created_at FROM folder_requests WHERE request_id=$1 AND user_id=$2", requestID, user).Scan(&r.RequestID, &r.UserID, &created)
+	if e != nil {
+		return nil, e
+	}
+	r.CreatedAt = created
+	return &r, nil
+}

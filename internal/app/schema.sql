@@ -27,3 +27,21 @@ CREATE INDEX IF NOT EXISTS subscriptions_user ON subscriptions(user_id,expires_a
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ;
 ALTER TABLE jobs ADD COLUMN IF NOT EXISTS stage TEXT NOT NULL DEFAULT '';
 ALTER TABLE jobs ADD COLUMN IF NOT EXISTS detail TEXT NOT NULL DEFAULT '';
+CREATE TABLE IF NOT EXISTS folders (
+  id TEXT PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  chat_id BIGINT NOT NULL,
+  chat_title TEXT NOT NULL DEFAULT '',
+  chat_username TEXT NOT NULL DEFAULT '',
+  chat_type TEXT NOT NULL DEFAULT 'channel',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (user_id, chat_id)
+);
+CREATE INDEX IF NOT EXISTS folders_user ON folders(user_id, created_at);
+CREATE TABLE IF NOT EXISTS folder_requests (
+  request_id BIGINT PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS folder_requests_user ON folder_requests(user_id, created_at);
