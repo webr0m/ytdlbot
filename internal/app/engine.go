@@ -199,6 +199,36 @@ func (e *Engine) Download(ctx context.Context, j Job, dir string, progress func(
 		return ctx.Err()
 	}
 	if er != nil {
+		// Try streamlink fallback for live streams.
+		if e.Config.Streamlink != "" && (strings.Contains(j.URL, "twitch.tv") || strings.Contains(j.URL, "/live") || strings.Contains(j.URL, "youtube.com/live")) {
+			if resolved, _ := exec.LookPath(e.Config.Streamlink); resolved != "" {
+				a := []string{"--output", filepath.Join(dir, "live.mp4"), j.URL, "best"}
+				cmd2 := exec.CommandContext(ctx, resolved, a...)
+				prepareProcess(cmd2)
+				if er2 := cmd2.Run(); er2 == nil {
+					b, _ := json.Marshal([]string{filepath.Join(dir, "live.mp4")})
+					return os.WriteFile(filepath.Join(dir, ".finalfiles.json"), b, 0600)
+				}
+			}
+		}
+		// Try N_m3u8DL-RE fallback for HLS/DASH URLs.
+		if e.Config.NM3U8DL != "" && (strings.Contains(j.URL, ".m3u8") || strings.Contains(j.URL, "manifest")) {
+			if resolved, _ := exec.LookPath(e.Config.NM3U8DL); resolved != "" {
+				a := []string{"--save-dir", dir, "--save-name", "stream", j.URL}
+				cmd2 := exec.CommandContext(ctx, resolved, a...)
+				prepareProcess(cmd2)
+				if er2 := cmd2.Run(); er2 == nil {
+					// Find the output file.
+					entries, _ := os.ReadDir(dir)
+					for _, ent := range entries {
+						if strings.HasSuffix(ent.Name(), ".mp4") || strings.HasSuffix(ent.Name(), ".ts") || strings.HasSuffix(ent.Name(), ".mkv") {
+							b, _ := json.Marshal([]string{filepath.Join(dir, ent.Name())})
+							return os.WriteFile(filepath.Join(dir, ".finalfiles.json"), b, 0600)
+						}
+					}
+				}
+			}
+		}
 		return friendlyError(stderr.String())
 	}
 	if sc.Err() != nil {
@@ -231,6 +261,30 @@ func friendlyError(detail string) error {
 	}
 }
 func (e *Engine) direct(ctx context.Context, j Job, dir string, progress func(float64)) error {
+	// Prefer aria2c for segmented/accelerated downloads when available.
+	if e.Config.Aria2 != "" {
+		if resolved, err := exec.LookPath(e.Config.Aria2); err == nil || resolved != "" {
+			exe := e.Config.Aria2
+			if resolved != "" {
+				exe = resolved
+			}
+			a := []string{"--dir=" + dir, "--out=archivo.bin", "--max-connection-per-server=8", "--split=8", "--min-split-size=1M", "--continue=true", "--auto-file-renaming=false", "--allow-overwrite=true", "--summary-interval=5", "--console-log-level=warn", "--download-result=hide", "--quiet"}
+			if j.Options.UseCookies && e.Config.Cookies != "" {
+				a = append(a, "--load-cookies="+e.Config.Cookies)
+			}
+			a = append(a, j.URL)
+			cmd := exec.CommandContext(ctx, exe, a...)
+			prepareProcess(cmd)
+			var stderr tail
+			cmd.Stderr = &stderr
+			if er := cmd.Run(); er == nil {
+				// Rename to include extension if possible.
+				return nil
+			}
+			// Fall through to built-in HTTP client on failure.
+		}
+	}
+	// Built-in HTTP client fallback.
 	req, er := http.NewRequestWithContext(ctx, "GET", j.URL, nil)
 	if er != nil {
 		return er
