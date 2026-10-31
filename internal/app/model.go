@@ -29,9 +29,7 @@ func (o *Options) Validate() error {
 	if o.Engine == "" {
 		o.Engine = "auto"
 	}
-	if o.Quality == 0 {
-		o.Quality = 1080
-	}
+	// Quality 0 means "original/best" for video mode.
 	if o.AudioFormat == "" {
 		o.AudioFormat = "mp3"
 	}
@@ -41,7 +39,7 @@ func (o *Options) Validate() error {
 	if o.Engine != "auto" && o.Engine != "ytdlp" && o.Engine != "direct" && o.Engine != "gallery" {
 		return fmt.Errorf("motor inválido")
 	}
-	if o.Quality != 360 && o.Quality != 480 && o.Quality != 720 && o.Quality != 1080 && o.Quality != 1440 && o.Quality != 2160 {
+	if o.Quality != 0 && o.Quality != 360 && o.Quality != 480 && o.Quality != 720 && o.Quality != 1080 && o.Quality != 1440 && o.Quality != 2160 {
 		return fmt.Errorf("calidad inválida")
 	}
 	if o.AudioFormat != "mp3" && o.AudioFormat != "m4a" && o.AudioFormat != "flac" && o.AudioFormat != "opus" {

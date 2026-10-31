@@ -241,6 +241,9 @@ func (e *Engine) Download(ctx context.Context, j Job, dir string, progress func(
 	return nil
 }
 func videoFormat(quality int) string {
+	if quality <= 0 {
+		return "bv*+ba/b"
+	}
 	return fmt.Sprintf("bv*[height<=%d][vcodec^=avc]+ba[acodec^=mp4a]/b[height<=%d]/bv*[height<=%d]+ba/b", quality, quality, quality)
 }
 func friendlyError(detail string) error {
