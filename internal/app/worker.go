@@ -222,7 +222,11 @@ func (s *Server) runJob(parent context.Context, j Job) {
 					<-s.ramGate
 					outputs = append(outputs, parts...)
 				} else if info.Size() > s.Config.MaxBytes {
-					er = fmt.Errorf("el archivo unido supera el límite del bot; reduce calidad o usa Mensajes guardados del propietario")
+					if s.Config.Admins[j.UserID] {
+						er = fmt.Errorf("el archivo supera el límite del bot (%d MB); reduce calidad o usa Mensajes guardados del propietario", s.Config.MaxBytes/1000000)
+					} else {
+						er = fmt.Errorf("el archivo (%.0f MB) supera el límite de Telegram (%d MB); reduce calidad o activa Premium", float64(info.Size())/1000000, s.Config.MaxBytes/1000000)
+					}
 				} else if s.Bot != nil {
 					kind := "document"
 					if !j.Options.AsDocument {
